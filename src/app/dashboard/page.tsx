@@ -1,0 +1,157 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useUser } from '@/hooks/useUser'
+import { createClient } from '@/lib/supabase/client'
+import { StarRating } from '@/components/trust/TrustComponents'
+import { MessageSquare, Heart, Clock, ChevronRight } from 'lucide-react'
+
+export default function DashboardPage() {
+  const { user, profile } = useUser()
+  const [stats, setStats] = useState({ reviewCount: 0, helpfulVotes: 0 })
+  const [recentReviews, setRecentReviews] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
+
+  useEffect(() => {
+    if (!user) return
+
+    const fetchDashboardData = async () => {
+      try {
+        // Fetch user's reviews
+        const { data: reviews, error } = await supabase
+          .from('reviews')
+          .select('*, businesses(name, name_bn, slug)')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+
+        if (error) {
+          console.error(error)
+        } else if (reviews) {
+          setRecentReviews(reviews.slice(0, 3))
+          
+          // Calculate stats
+          const reviewCount = reviews.length
+          const helpfulVotes = reviews.reduce((sum, rev) => sum + (rev.helpful_count || 0), 0)
+          setStats({ reviewCount, helpfulVotes })
+        }
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDashboardData()
+  }, [user])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full min-h-[300px]">
+        <Clock className="w-6 h-6 text-[var(--color-primary)] animate-spin" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-8 font-brand">
+      
+      {/* Welcome Message */}
+      <div>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
+          স্বাগতম, {profile?.full_name || 'ব্যবহারকারী'}!
+        </h1>
+        <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+          আপনার ড্যাশবোর্ড থেকে আপনি আপনার রিভিউগুলো পরিচালনা ও সম্পাদনা করতে পারেন।
+        </p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        
+        {/* Total Reviews Card */}
+        <div className="bg-[var(--color-surface-2)] p-5 border border-[var(--color-border)] rounded-xl flex items-center space-x-4">
+          <div className="p-3 rounded-full bg-[var(--color-primary-muted)] text-[var(--color-primary)]">
+            <MessageSquare className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-xs text-[var(--color-text-secondary)] font-medium">মোট রিভিউ লিখেছেন</p>
+            <p className="text-2xl font-bold font-mono text-[var(--color-text-primary)] mt-0.5">{stats.reviewCount}টি</p>
+          </div>
+        </div>
+
+        {/* Helpful Votes Card */}
+        <div className="bg-[var(--color-surface-2)] p-5 border border-[var(--color-border)] rounded-xl flex items-center space-x-4">
+          <div className="p-3 rounded-full bg-[var(--color-accent-muted)] text-[var(--color-accent)]">
+            <Heart className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-xs text-[var(--color-text-secondary)] font-medium">রিভিউতে সহায়ক ভোট</p>
+            <p className="text-2xl font-bold font-mono text-[var(--color-text-primary)] mt-0.5">{stats.helpfulVotes}টি</p>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Recent Reviews written by user */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-2">
+          <h2 className="font-bold text-lg text-[var(--color-text-primary)]">আমার শেষ রিভিউসমূহ</h2>
+          <Link
+            href="/dashboard/reviews"
+            className="flex items-center space-x-1 text-xs font-semibold text-[var(--color-primary)] hover:underline"
+          >
+            <span>সব দেখুন</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div className="space-y-4">
+          {recentReviews.length > 0 ? (
+            recentReviews.map((rev) => (
+              <div
+                key={rev.id}
+                className="bg-[var(--color-surface)] border border-[var(--color-border)] p-4 rounded-xl space-y-3 hover:shadow-xs transition duration-150"
+              >
+                <div className="flex items-center justify-between">
+                  <Link href={`/business/${rev.businesses?.slug}`} className="font-bold text-sm text-[var(--color-text-primary)] hover:text-[var(--color-primary)] transition">
+                    {rev.businesses?.name_bn || rev.businesses?.name}
+                  </Link>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                    rev.status === 'approved'
+                      ? 'bg-[var(--color-primary-muted)] text-[var(--color-primary)]'
+                      : rev.status === 'pending'
+                      ? 'bg-[var(--color-gold)]/10 text-[var(--color-gold)]'
+                      : 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]'
+                  }`}>
+                    {rev.status === 'approved' ? 'অনুমোদিত' : rev.status === 'pending' ? 'অপেক্ষমাণ' : 'প্রত্যাখ্যাত'}
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <StarRating rating={rev.rating} size="sm" />
+                  <span className="text-[10px] text-[var(--color-text-muted)] font-mono">
+                    {new Date(rev.created_at).toLocaleDateString('bn-BD')}
+                  </span>
+                </div>
+
+                <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed font-brand line-clamp-2">
+                  &ldquo;{rev.body}&rdquo;
+                </p>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-xl">
+              <p className="text-xs text-[var(--color-text-secondary)]">আপনি এখনও কোনো রিভিউ লিখেননি।</p>
+              <Link href="/businesses" className="inline-block text-xs text-[var(--color-primary)] hover:underline mt-2 font-semibold">
+                ব্যবসা খুঁজুন ও রিভিউ লিখুন
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+
+    </div>
+  )
+}
