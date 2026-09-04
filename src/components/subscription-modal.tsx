@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useBdapps } from '@/lib/bdapps-context';
-import { ShieldCheck, Phone, KeyRound, CheckCircle2, AlertTriangle, X, Lock, User, MapPin, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Phone, KeyRound, CheckCircle2, AlertTriangle, X, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export function SubscriptionModal() {
@@ -13,30 +13,20 @@ export function SubscriptionModal() {
     error,
     isLoading,
     checkStatus,
-    loginWithPassword,
     requestOtp,
     verifyOtp,
-    saveInitialProfile,
   } = useBdapps();
 
   const [mobileInput, setMobileInput] = useState<string>(pendingMobile || '');
-  const [passwordInput, setPasswordInput] = useState<string>('');
   const [otpInput, setOtpInput] = useState<string>('');
-  const [pinCode, setPinCode] = useState<string>('');
-  const [fullName, setFullName] = useState<string>('');
-  const [location, setLocation] = useState<string>('Dhaka, Bangladesh');
-  const [stepState, setStepState] = useState<'phone' | 'enter_password' | 'confirm' | 'otp' | 'set_password' | 'success'>('phone');
+  const [stepState, setStepState] = useState<'phone' | 'otp' | 'success'>('phone');
   const router = useRouter();
 
-  // Sync mobileInput whenever modal opens or pendingMobile changes
   useEffect(() => {
     if (isModalOpen) {
       setMobileInput(pendingMobile || '');
       setStepState('phone');
-      setPasswordInput('');
       setOtpInput('');
-      setPinCode('');
-      setFullName('');
     }
   }, [isModalOpen, pendingMobile]);
 
@@ -46,13 +36,7 @@ export function SubscriptionModal() {
     e.preventDefault();
     if (!mobileInput.trim()) return;
 
-    // 1. Check subscription status & existing password
     const info = await checkStatus(mobileInput);
-
-    if (info.hasPassword) {
-      setStepState('enter_password');
-      return;
-    }
 
     if (info.status === 'REGISTERED') {
       setStepState('success');
@@ -63,7 +47,6 @@ export function SubscriptionModal() {
       return;
     }
 
-    // 2. If unregistered or pending, trigger send_otp
     const res = await requestOtp(mobileInput);
 
     if (res.alreadyRegistered) {
@@ -77,51 +60,12 @@ export function SubscriptionModal() {
     }
   };
 
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!passwordInput.trim()) return;
-
-    const success = await loginWithPassword(passwordInput);
-    if (success) {
-      setStepState('success');
-      setTimeout(() => {
-        closeSubscribeModal();
-        router.push('/dashboard');
-      }, 1500);
-    }
-  };
-
-  const handleRequestOtpFallback = async () => {
-    const res = await requestOtp(mobileInput);
-    if (res.alreadyRegistered || res.success) {
-      setStepState('otp');
-    }
-  };
-
   const handleOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!otpInput.trim()) return;
 
     const res = await verifyOtp(otpInput);
     if (res.success) {
-      if (res.isFirstTime) {
-        setStepState('set_password');
-      } else {
-        setStepState('success');
-        setTimeout(() => {
-          closeSubscribeModal();
-          router.push('/dashboard');
-        }, 1500);
-      }
-    }
-  };
-
-  const handleSaveProfileSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!pinCode.trim()) return;
-
-    const success = await saveInitialProfile(pinCode, fullName, location);
-    if (success) {
       setStepState('success');
       setTimeout(() => {
         closeSubscribeModal();
@@ -182,7 +126,7 @@ export function SubscriptionModal() {
                   />
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1.5">
-                  Enter your Robi or Airtel mobile number to sign in or subscribe.
+                  Enter your Robi or Airtel mobile number to receive subscription OTP code.
                 </p>
               </div>
 
@@ -195,7 +139,7 @@ export function SubscriptionModal() {
                   <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 ) : (
                   <>
-                    <span>Continue to Sign In</span>
+                    <span>Continue & Send OTP (2.78 BDT/day)</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -203,70 +147,7 @@ export function SubscriptionModal() {
             </form>
           )}
 
-          {/* STEP 2: Existing User Password Prompt */}
-          {stepState === 'enter_password' && (
-            <form onSubmit={handlePasswordSubmit} className="space-y-4 font-brand">
-              <div className="text-center space-y-1 pb-1">
-                <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-1">
-                  <Lock className="w-5 h-5" />
-                </div>
-                <h4 className="text-base font-bold text-slate-900 dark:text-white">
-                  Welcome Back!
-                </h4>
-                <p className="text-xs text-slate-500">
-                  Account found for <strong className="text-emerald-600 dark:text-emerald-400 font-mono">{mobileInput}</strong>. Enter your password / PIN to sign in.
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1 text-center">
-                  Account PIN / Password
-                </label>
-                <div className="relative max-w-xs mx-auto">
-                  <Lock className="w-5 h-5 absolute left-3.5 top-3 text-slate-400" />
-                  <input
-                    type="password"
-                    placeholder="Enter password / PIN"
-                    value={passwordInput}
-                    onChange={(e) => setPasswordInput(e.target.value)}
-                    required
-                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-center text-base font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none transition"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading || !passwordInput}
-                className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-sm shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                {isLoading ? (
-                  <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                ) : (
-                  'Sign In to Bishwas'
-                )}
-              </button>
-
-              <div className="flex items-center justify-between text-xs pt-2 text-slate-500">
-                <button
-                  type="button"
-                  onClick={() => setStepState('phone')}
-                  className="hover:underline"
-                >
-                  Change Mobile
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRequestOtpFallback}
-                  className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
-                >
-                  Forgot Password? Sign in via OTP
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* STEP 3: Enter OTP */}
+          {/* STEP 2: Enter OTP */}
           {stepState === 'otp' && (
             <form onSubmit={handleOtpSubmit} className="space-y-4">
               <div className="text-center space-y-1 pb-1">
@@ -304,7 +185,7 @@ export function SubscriptionModal() {
                 {isLoading ? (
                   <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 ) : (
-                  'Verify OTP & Continue'
+                  'Verify OTP & Activate'
                 )}
               </button>
 
@@ -318,97 +199,15 @@ export function SubscriptionModal() {
             </form>
           )}
 
-          {/* STEP 4: First Time Setup (Set Password & Profile) */}
-          {stepState === 'set_password' && (
-            <form onSubmit={handleSaveProfileSubmit} className="space-y-4">
-              <div className="text-center space-y-1 pb-1">
-                <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-1">
-                  <Lock className="w-5 h-5" />
-                </div>
-                <h4 className="text-base font-bold text-slate-900 dark:text-white">
-                  Set Account Password & Profile
-                </h4>
-                <p className="text-xs text-slate-500">
-                  First time subscriber! Set a password & profile info to secure your account.
-                </p>
-              </div>
-
-              {/* Password / PIN */}
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-                  Account PIN / Password *
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
-                  <input
-                    type="password"
-                    placeholder="Enter 4-6 digit PIN (e.g. 1234)"
-                    value={pinCode}
-                    onChange={(e) => setPinCode(e.target.value)}
-                    required
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none transition"
-                  />
-                </div>
-              </div>
-
-              {/* Full Name */}
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-                  Full Name / নাম *
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="e.g. Tanvir Ahmed"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none transition"
-                  />
-                </div>
-              </div>
-
-              {/* Location */}
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-                  Location / এলাকা
-                </label>
-                <div className="relative">
-                  <MapPin className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="e.g. Dhanmondi, Dhaka"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none transition"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading || !pinCode || !fullName}
-                className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-sm shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                {isLoading ? (
-                  <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                ) : (
-                  'Save Password & Complete Registration'
-                )}
-              </button>
-            </form>
-          )}
-
-          {/* STEP 5: Success */}
+          {/* STEP 3: Success */}
           {stepState === 'success' && (
             <div className="text-center py-6 space-y-3">
               <CheckCircle2 className="w-16 h-16 text-emerald-500 mx-auto animate-bounce" />
               <h4 className="text-xl font-bold text-slate-900 dark:text-white">
-                Welcome to Bishwas!
+                Subscription Verified!
               </h4>
               <p className="text-xs text-slate-600 dark:text-slate-400">
-                Logged in successfully ({mobileInput}). Taking you to the platform...
+                Your Robi/Airtel subscription is active ({mobileInput}). Taking you to the platform...
               </p>
             </div>
           )}
