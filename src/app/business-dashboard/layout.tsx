@@ -1,12 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { useUser } from '@/hooks/useUser'
+import { useBdapps } from '@/lib/bdapps-context'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
-import { LayoutDashboard, MessageSquare, Building2, ShieldAlert, Loader2, ArrowRight } from 'lucide-react'
+import { LayoutDashboard, MessageSquare, Building2, ShieldAlert, Loader2, ArrowRight, Sparkles } from 'lucide-react'
+import Link from 'next/link'
 
 export default function BusinessDashboardLayout({
   children,
@@ -14,13 +13,7 @@ export default function BusinessDashboardLayout({
   children: React.ReactNode
 }) {
   const { user, profile, loading } = useUser()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login?redirect=/business-dashboard')
-    }
-  }, [user, loading, router])
+  const { openSubscribeModal } = useBdapps()
 
   if (loading) {
     return (
@@ -37,7 +30,33 @@ export default function BusinessDashboardLayout({
     )
   }
 
-  if (!user) return null
+  // Not logged in: Show inline sign-in prompt instead of redirecting to /login page
+  if (!user) {
+    return (
+      <div className="flex flex-col min-h-screen bg-[var(--color-surface)] font-brand">
+        <Navbar />
+        <div className="flex-grow max-w-xl mx-auto px-4 py-16 flex flex-col items-center justify-center text-center space-y-4">
+          <div className="p-4 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-2xl border border-emerald-500/20">
+            <Building2 className="w-12 h-12" />
+          </div>
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
+            বিজনেস ড্যাশবোর্ড
+          </h1>
+          <p className="text-sm text-[var(--color-text-secondary)] max-w-md">
+            আপনার ব্যবসার প্রোফাইল পরিচালনা ও গ্রাহকদের উত্তরের জন্য বিডিঅ্যাপস সাবস্ক্রিপশন সম্পন্ন করুন।
+          </p>
+          <button
+            onClick={() => openSubscribeModal()}
+            className="py-3.5 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-2xl text-sm shadow-xl transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4 text-emerald-200" />
+            <span>বিডিঅ্যাপস সাইন ইন (2.78 BDT/day)</span>
+          </button>
+        </div>
+        <Footer />
+      </div>
+    )
+  }
 
   // Ensure role is business_owner or admin
   const isAuthorized = profile?.role === 'business_owner' || profile?.role === 'admin'
