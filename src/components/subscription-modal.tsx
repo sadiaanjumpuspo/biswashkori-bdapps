@@ -92,7 +92,7 @@ export function SubscriptionModal() {
             <div>
               <h3 className="text-xl font-bold tracking-tight">bdapps Subscriber Portal</h3>
               <p className="text-xs text-emerald-100 mt-0.5">
-                Carrier Billing Service • Robi & Airtel Users
+                Carrier Billing Service • Robi & Cirkle Users
               </p>
             </div>
           </div>
@@ -112,7 +112,7 @@ export function SubscriptionModal() {
             <form onSubmit={handlePhoneSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
-                  Mobile Number (Robi / Airtel)
+                  Mobile Number (Robi / Cirkle)
                 </label>
                 <div className="relative">
                   <Phone className="w-5 h-5 absolute left-3.5 top-3 text-slate-400" />
@@ -126,7 +126,7 @@ export function SubscriptionModal() {
                   />
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1.5">
-                  Enter your Robi or Airtel mobile number to receive subscription OTP code.
+                  Enter your Robi or Cirkle mobile number to receive subscription OTP code.
                 </p>
               </div>
 
@@ -207,7 +207,7 @@ export function SubscriptionModal() {
                 Subscription Verified!
               </h4>
               <p className="text-xs text-slate-600 dark:text-slate-400">
-                Your Robi/Airtel subscription is active ({mobileInput}). Taking you to the platform...
+                Your Robi/Cirkle subscription is active ({mobileInput}). Taking you to the platform...
               </p>
             </div>
           )}

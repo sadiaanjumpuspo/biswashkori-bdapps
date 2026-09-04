@@ -102,7 +102,7 @@ export default function LoginPage() {
             <form onSubmit={handlePhoneSubmit} className="space-y-4 text-left">
               <div>
                 <label className="block text-xs font-semibold text-[var(--color-text-primary)] mb-1">
-                  মোবাইল নম্বর (Robi / Airtel) *
+                  মোবাইল নম্বর (Robi / Cirkle) *
                 </label>
                 <div className="relative">
                   <Phone className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />

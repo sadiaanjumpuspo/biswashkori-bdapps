@@ -86,7 +86,7 @@ export default function Navbar() {
                         <span>bdapps Subscriber</span>
                       </p>
                       <p className="font-bold truncate text-xs mt-0.5">{bdappsUser.phone}</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">2.78 BDT / day (Robi / Airtel)</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">2.78 BDT / day (Robi / Cirkle)</p>
                     </div>
 
                     <Link

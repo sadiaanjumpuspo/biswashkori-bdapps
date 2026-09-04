@@ -58,7 +58,7 @@ export function BdappsProvider({ children }: { children: React.ReactNode }) {
       if (storedMobile) {
         setUser({
           phone: storedMobile,
-          fullName: storedName || 'Robi / Airtel Subscriber',
+          fullName: storedName || 'Robi / Cirkle Subscriber',
           role: storedRole || ((storedMobile === '8801878932651' || storedMobile === '01878932651') ? 'admin' : 'user'),
           subscriptionStatus: storedStatus || 'REGISTERED',
         });
@@ -136,7 +136,7 @@ export function BdappsProvider({ children }: { children: React.ReactNode }) {
       if (data.alreadyRegistered || data.statusCode === 'E1351') {
         const newUser: BdappsUser = {
           phone: formatted,
-          fullName: 'Robi / Airtel Subscriber',
+          fullName: 'Robi / Cirkle Subscriber',
           role: (formatted === '8801878932651' || formatted === '01878932651') ? 'admin' : 'user',
           subscriptionStatus: 'REGISTERED',
         };

@@ -39,7 +39,7 @@ export function SubscriptionCard() {
           <div className="flex flex-wrap items-center gap-4 text-xs text-slate-300 pt-1">
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>Robi & Airtel Subscribers</span>
+              <span>Robi & Cirkle Subscribers</span>
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />

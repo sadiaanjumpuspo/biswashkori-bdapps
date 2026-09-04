@@ -73,7 +73,7 @@ export default function DashboardPage() {
             স্বাগতম, {bdappsUser?.phone || 'সম্মানিত সাবস্ক্রাইবার'}!
           </h1>
           <p className="text-xs text-emerald-100 mt-1">
-            আপনার Robi/Airtel বিডিঅ্যাপস অ্যাকাউন্ট থেকে সাবস্ক্রিপশন চালু আছে (২.৭৮ টাকা/দিন)।
+            আপনার Robi/Cirkle বিডিঅ্যাপস অ্যাকাউন্ট থেকে সাবস্ক্রিপশন চালু আছে (২.৭৮ টাকা/দিন)।
           </p>
         </div>
 

@@ -38,7 +38,7 @@ export default function ReviewForm({ businessId, businessName, businessSlug }: R
         <div className="space-y-2">
           <h2 className="text-2xl font-bold">BDApps Subscription Required</h2>
           <p className="text-slate-300 text-sm leading-relaxed">
-            Writing verified reviews for <strong>{businessName}</strong> requires an active Robi / Airtel BDApps subscription (2.78 BDT / day).
+            Writing verified reviews for <strong>{businessName}</strong> requires an active Robi / Cirkle BDApps subscription (2.78 BDT / day).
           </p>
         </div>
 
