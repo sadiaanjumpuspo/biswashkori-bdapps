@@ -110,7 +110,7 @@ export default function ClaimBusinessPage() {
         .from('business_claims')
         .insert({
           business_id: selectedBusinessId,
-          user_id: user.id,
+          user_phone: user.phone,
           proof_document_url: finalProofUrl,
           notes: notes.trim(),
           status: 'pending'

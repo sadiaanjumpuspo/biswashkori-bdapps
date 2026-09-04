@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { StarRating } from '@/components/trust/TrustComponents'
-import { AlertCircle, CheckCircle, Clock, Check, XCircle, AlertTriangle, ShieldCheck } from 'lucide-react'
+import { AlertCircle, CheckCircle, Clock, Check, XCircle, ShieldCheck } from 'lucide-react'
 
 export default function FlagsModerationPage() {
   const [flags, setFlags] = useState<any[]>([])
@@ -19,17 +19,15 @@ export default function FlagsModerationPage() {
     setLoading(true)
     setError(null)
     try {
-      // Query the flags table and join reviews, businesses, profiles, and reporting profiles
+      // Query the flags table and join reviews & businesses safely
       const { data, error: fetchError } = await supabase
         .from('flags')
         .select(`
           *,
           reviews (
             *,
-            businesses (name, name_bn),
-            profiles (full_name)
-          ),
-          profiles!flags_flagged_by_fkey (full_name)
+            businesses (name, name_bn)
+          )
         `)
         .eq('status', filter)
         .order('created_at', { ascending: false })
@@ -192,8 +190,8 @@ export default function FlagsModerationPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-[var(--color-border)] pb-3 text-xs">
                 <div>
                   <span className="text-[10px] text-[var(--color-text-muted)] block">রিপোর্টকারী:</span>
-                  <span className="font-bold text-[var(--color-text-primary)]">
-                    {flag.profiles?.full_name || 'বেনামী ব্যবহারকারী'}
+                  <span className="font-bold text-[var(--color-text-primary)] font-mono">
+                    {flag.flagged_by_phone || 'Subscriber'}
                   </span>
                 </div>
                 
@@ -235,8 +233,8 @@ export default function FlagsModerationPage() {
                       </div>
                       <div className="text-right">
                         <span className="text-[10px] text-[var(--color-text-muted)] block">রিভিউ দাতা:</span>
-                        <span className="font-semibold text-xs text-[var(--color-text-secondary)]">
-                          {flag.reviews.profiles?.full_name || 'বেনামী'}
+                        <span className="font-semibold text-xs text-[var(--color-text-secondary)] font-mono">
+                          {flag.reviews.user_phone || 'User'}
                         </span>
                       </div>
                     </div>

@@ -36,7 +36,7 @@ export default function FlagDialog({ reviewId, isOpen, onClose, onSuccess }: Fla
     const supabase = createClient()
     const { error: flagError } = await supabase.from('flags').insert({
       review_id: reviewId,
-      flagged_by: user.id,
+      flagged_by_phone: user.phone,
       reason,
       details,
       status: 'open'

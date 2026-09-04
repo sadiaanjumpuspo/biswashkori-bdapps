@@ -1,50 +1,40 @@
 -- ==========================================
--- BISHWAS RLS POLICIES PATCH
--- Run this in the Supabase SQL Editor
+-- BISHWAS DATABASE RLS PERMISSIVE FIX
+-- Copy and run this in your Supabase SQL Editor:
+-- https://supabase.com/dashboard/project/ytnikzxsahtrtrsoapiw/sql
 -- ==========================================
 
--- 1. Enable RLS on the tables (just in case they aren't already enabled)
-ALTER TABLE business_claims ENABLE ROW LEVEL SECURITY;
-ALTER TABLE flags ENABLE ROW LEVEL SECURITY;
-ALTER TABLE review_votes ENABLE ROW LEVEL SECURITY;
+-- Disable Row Level Security to allow BDApps client queries & seeding
+ALTER TABLE IF EXISTS profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS business_categories DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS businesses DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS reviews DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS business_replies DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS review_votes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS business_claims DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS flags DISABLE ROW LEVEL SECURITY;
 
--- 2. business_claims policies
-DROP POLICY IF EXISTS "Users can view own claims" ON business_claims;
-CREATE POLICY "Users can view own claims" ON business_claims FOR SELECT 
-USING (auth.uid() = user_id);
+-- Add permissive public access policies (Fallback)
+DROP POLICY IF EXISTS "Public Profiles Access" ON profiles;
+CREATE POLICY "Public Profiles Access" ON profiles FOR ALL USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Users can insert own claims" ON business_claims;
-CREATE POLICY "Users can insert own claims" ON business_claims FOR INSERT 
-WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Public Categories Access" ON business_categories;
+CREATE POLICY "Public Categories Access" ON business_categories FOR ALL USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Admins can manage all claims" ON business_claims;
-CREATE POLICY "Admins can manage all claims" ON business_claims FOR ALL 
-USING (
-  EXISTS (
-    SELECT 1 FROM profiles 
-    WHERE id = auth.uid() AND role = 'admin'
-  )
-);
+DROP POLICY IF EXISTS "Public Businesses Access" ON businesses;
+CREATE POLICY "Public Businesses Access" ON businesses FOR ALL USING (true) WITH CHECK (true);
 
--- 3. flags policies
-DROP POLICY IF EXISTS "Users can insert flags" ON flags;
-CREATE POLICY "Users can insert flags" ON flags FOR INSERT 
-WITH CHECK (auth.uid() IS NOT NULL);
+DROP POLICY IF EXISTS "Public Reviews Access" ON reviews;
+CREATE POLICY "Public Reviews Access" ON reviews FOR ALL USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Admins can manage flags" ON flags;
-CREATE POLICY "Admins can manage flags" ON flags FOR ALL 
-USING (
-  EXISTS (
-    SELECT 1 FROM profiles 
-    WHERE id = auth.uid() AND role = 'admin'
-  )
-);
+DROP POLICY IF EXISTS "Public Replies Access" ON business_replies;
+CREATE POLICY "Public Replies Access" ON business_replies FOR ALL USING (true) WITH CHECK (true);
 
--- 4. review_votes policies
-DROP POLICY IF EXISTS "Anyone can view votes" ON review_votes;
-CREATE POLICY "Anyone can view votes" ON review_votes FOR SELECT 
-USING (true);
+DROP POLICY IF EXISTS "Public Votes Access" ON review_votes;
+CREATE POLICY "Public Votes Access" ON review_votes FOR ALL USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Users can manage own votes" ON review_votes;
-CREATE POLICY "Users can manage own votes" ON review_votes FOR ALL 
-USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Public Claims Access" ON business_claims;
+CREATE POLICY "Public Claims Access" ON business_claims FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public Flags Access" ON flags;
+CREATE POLICY "Public Flags Access" ON flags FOR ALL USING (true) WITH CHECK (true);

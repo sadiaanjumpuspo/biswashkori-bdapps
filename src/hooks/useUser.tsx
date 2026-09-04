@@ -2,25 +2,30 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { User } from '@supabase/supabase-js'
+import { useBdapps } from '@/lib/bdapps-context'
 
 export interface Profile {
-  id: string
+  phone: string
   full_name: string | null
   display_name: string | null
   avatar_url: string | null
   bio: string | null
-  phone: string | null
   location: string | null
-  is_verified: boolean
   role: 'user' | 'business_owner' | 'admin'
   preferred_language: 'en' | 'bn'
+  subscription_status: 'REGISTERED' | 'UNREGISTERED' | 'PENDING_CHARGE'
   created_at: string
   updated_at: string
 }
 
+export interface SyntheticUser {
+  id: string
+  phone: string
+  email: string
+}
+
 interface UserContextType {
-  user: User | null
+  user: SyntheticUser | null
   profile: Profile | null
   loading: boolean
   refreshProfile: () => Promise<void>
@@ -30,80 +35,98 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const { user: bdappsUser, logout: bdappsLogout } = useBdapps()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
-  const fetchProfile = async (userId: string) => {
+  const activePhone = bdappsUser?.phone
+
+  const isPhoneAdmin = (phone: string) => {
+    const cleaned = phone.replace(/\D/g, '')
+    return cleaned === '01878932651' || cleaned === '8801878932651' || cleaned === '8801800000000'
+  }
+
+  const fetchOrCreateProfile = async (phone: string) => {
     try {
-      const { data, error } = await supabase
+      // 1. Try to fetch existing profile by phone
+      const { data } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', userId)
+        .eq('phone', phone)
         .single()
 
-      if (error) {
-        console.error('Error fetching profile:', error)
-      } else {
+      if (data) {
+        // If phone is admin phone, ensure admin role
+        if (isPhoneAdmin(phone) && data.role !== 'admin') {
+          await supabase.from('profiles').update({ role: 'admin' }).eq('phone', phone)
+          data.role = 'admin'
+        }
         setProfile(data as Profile)
+        return
+      }
+
+      // 2. Upsert initial profile if not found
+      const assignedRole: 'admin' | 'business_owner' | 'user' = isPhoneAdmin(phone)
+        ? 'admin'
+        : (phone.includes('1911998877') ? 'business_owner' : 'user')
+
+      const newProfile: Partial<Profile> = {
+        phone: phone,
+        full_name: isPhoneAdmin(phone) ? 'Bishwas Admin' : 'BDApps Subscriber',
+        display_name: isPhoneAdmin(phone) ? 'Admin' : 'Subscriber_' + phone.slice(-4),
+        role: assignedRole,
+        subscription_status: 'REGISTERED',
+        location: 'Dhaka, Bangladesh',
+        preferred_language: 'bn',
+      }
+
+      const { data: inserted } = await supabase
+        .from('profiles')
+        .upsert(newProfile)
+        .select('*')
+        .single()
+
+      if (inserted) {
+        setProfile(inserted as Profile)
       }
     } catch (err) {
-      console.error('Profile fetch failed:', err)
+      console.error('Failed to sync BDApps user profile:', err)
     }
   }
 
   const refreshProfile = async () => {
-    if (user) {
-      await fetchProfile(user.id)
+    if (activePhone) {
+      await fetchOrCreateProfile(activePhone)
     }
   }
 
   useEffect(() => {
-    const getInitialSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) {
-          setUser(session.user)
-          await fetchProfile(session.user.id)
-        }
-      } catch (err) {
-        console.error('Error getting session:', err)
-      } finally {
-        setLoading(false)
-      }
+    if (activePhone) {
+      fetchOrCreateProfile(activePhone).finally(() => setLoading(false))
+    } else {
+      setProfile(null)
+      setLoading(false)
     }
+  }, [activePhone])
 
-    getInitialSession()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session) {
-          setUser(session.user)
-          await fetchProfile(session.user.id)
-        } else {
-          setUser(null)
-          setProfile(null)
-        }
-        setLoading(false)
+  const syntheticUser: SyntheticUser | null = activePhone
+    ? {
+        id: activePhone,
+        phone: activePhone,
+        email: `${activePhone}@bdapps.com`,
       }
-    )
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [])
+    : null
 
   const signOut = async () => {
     setLoading(true)
-    await supabase.auth.signOut()
-    setUser(null)
+    bdappsLogout()
     setProfile(null)
     setLoading(false)
   }
 
   return (
-    <UserContext.Provider value={{ user, profile, loading, refreshProfile, signOut }}>
+    <UserContext.Provider value={{ user: syntheticUser, profile, loading, refreshProfile, signOut }}>
       {children}
     </UserContext.Provider>
   )

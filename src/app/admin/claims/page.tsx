@@ -19,7 +19,7 @@ export default function ClaimModerationPage() {
     try {
       const { data, error: fetchError } = await supabase
         .from('business_claims')
-        .select('*, businesses(name, name_bn), profiles(full_name, id)')
+        .select('*, businesses(name, name_bn)')
         .eq('status', 'pending')
         .order('created_at', { ascending: true })
 
@@ -55,7 +55,7 @@ export default function ClaimModerationPage() {
         .from('business_claims')
         .update({
           status: 'approved',
-          reviewed_by: adminUser.id,
+          reviewed_by_phone: adminUser.phone,
           reviewed_at: now
         })
         .eq('id', claim.id)
@@ -70,7 +70,7 @@ export default function ClaimModerationPage() {
         .from('businesses')
         .update({
           is_claimed: true,
-          claimed_by: claim.user_id,
+          claimed_by_phone: claim.user_phone,
           claimed_at: now
         })
         .eq('id', claim.business_id)
@@ -87,7 +87,7 @@ export default function ClaimModerationPage() {
           role: 'business_owner',
           updated_at: now
         })
-        .eq('id', claim.user_id)
+        .eq('phone', claim.user_phone)
 
       if (profileError) {
         setError(`ইউজার প্রোফাইল রোল আপডেট ব্যর্থ: ${profileError.message}`)
@@ -115,7 +115,7 @@ export default function ClaimModerationPage() {
         .from('business_claims')
         .update({
           status: 'rejected',
-          reviewed_by: adminUser.id,
+          reviewed_by_phone: adminUser.phone,
           reviewed_at: new Date().toISOString()
         })
         .eq('id', claim.id)
@@ -187,11 +187,8 @@ export default function ClaimModerationPage() {
                 
                 <div className="sm:text-right">
                   <span className="text-[10px] text-[var(--color-text-muted)] block font-bold">দাবিদার ইউজার:</span>
-                  <span className="font-bold text-xs text-[var(--color-text-secondary)]">
-                    {claim.profiles?.full_name || 'বেনামী ব্যবহারকারী'}
-                  </span>
-                  <span className="text-[9px] text-[var(--color-text-muted)] block font-mono">
-                    ID: {claim.profiles?.id}
+                  <span className="font-bold text-xs text-[var(--color-text-secondary)] font-mono">
+                    {claim.user_phone}
                   </span>
                 </div>
               </div>

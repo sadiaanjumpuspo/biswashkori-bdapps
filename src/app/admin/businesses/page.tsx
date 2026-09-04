@@ -25,7 +25,7 @@ export default function AdminBusinessesPage() {
         query = query.or(`name.ilike.%${search}%,name_bn.ilike.%${search}%`)
       }
 
-      const { data, error: fetchError } = await supabase.from('businesses').select('*, business_categories(name_en, name_bn)')
+      const { data, error: fetchError } = await query
 
       if (fetchError) {
         console.error(fetchError)

@@ -2,34 +2,39 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useUser } from '@/hooks/useUser'
 import { createClient } from '@/lib/supabase/client'
 import { StarRating } from '@/components/trust/TrustComponents'
-import { MessageSquare, Heart, Clock, ChevronRight } from 'lucide-react'
+import { MessageSquare, Heart, Clock, ChevronRight, ShieldCheck } from 'lucide-react'
+import { useBdapps } from '@/lib/bdapps-context'
 
 export default function DashboardPage() {
-  const { user, profile } = useUser()
+  const { user: bdappsUser, openSubscribeModal } = useBdapps()
   const [stats, setStats] = useState({ reviewCount: 0, helpfulVotes: 0 })
   const [recentReviews, setRecentReviews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
   useEffect(() => {
-    if (!user) return
-
     const fetchDashboardData = async () => {
       try {
-        // Fetch user's reviews
-        const { data: reviews, error } = await supabase
+        setLoading(true)
+
+        // Query reviews by BDApps phone or fall back to public
+        let query = supabase
           .from('reviews')
           .select('*, businesses(name, name_bn, slug)')
-          .eq('user_id', user.id)
           .order('created_at', { ascending: false })
+
+        if (bdappsUser?.phone) {
+          query = query.eq('user_phone', bdappsUser.phone)
+        }
+
+        const { data: reviews, error } = await query
 
         if (error) {
           console.error(error)
         } else if (reviews) {
-          setRecentReviews(reviews.slice(0, 3))
+          setRecentReviews(reviews.slice(0, 5))
           
           // Calculate stats
           const reviewCount = reviews.length
@@ -44,7 +49,7 @@ export default function DashboardPage() {
     }
 
     fetchDashboardData()
-  }, [user])
+  }, [bdappsUser])
 
   if (loading) {
     return (
@@ -58,13 +63,28 @@ export default function DashboardPage() {
     <div className="space-y-8 font-brand">
       
       {/* Welcome Message */}
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
-          স্বাগতম, {profile?.full_name || 'ব্যবহারকারী'}!
-        </h1>
-        <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-          আপনার ড্যাশবোর্ড থেকে আপনি আপনার রিভিউগুলো পরিচালনা ও সম্পাদনা করতে পারেন।
-        </p>
+      <div className="bg-gradient-to-r from-emerald-900 to-teal-900 text-white p-6 rounded-2xl border border-emerald-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-emerald-300 text-xs font-semibold uppercase tracking-wide">
+            <ShieldCheck className="w-4 h-4" />
+            <span>bdapps Gateway Subscription Active</span>
+          </div>
+          <h1 className="text-2xl font-bold mt-1">
+            স্বাগতম, {bdappsUser?.phone || 'সম্মানিত সাবস্ক্রাইবার'}!
+          </h1>
+          <p className="text-xs text-emerald-100 mt-1">
+            আপনার Robi/Airtel বিডিঅ্যাপস অ্যাকাউন্ট থেকে সাবস্ক্রিপশন চালু আছে (২.৭৮ টাকা/দিন)।
+          </p>
+        </div>
+
+        {(!bdappsUser || bdappsUser.subscriptionStatus !== 'REGISTERED') && (
+          <button
+            onClick={() => openSubscribeModal()}
+            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs shadow-md"
+          >
+            সাবস্ক্রিপশন রিনিউ করুন
+          </button>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -99,10 +119,10 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-2">
           <h2 className="font-bold text-lg text-[var(--color-text-primary)]">আমার শেষ রিভিউসমূহ</h2>
           <Link
-            href="/dashboard/reviews"
+            href="/businesses"
             className="flex items-center space-x-1 text-xs font-semibold text-[var(--color-primary)] hover:underline"
           >
-            <span>সব দেখুন</span>
+            <span>নতুন রিভিউ লিখুন</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>

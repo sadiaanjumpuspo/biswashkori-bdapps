@@ -82,7 +82,7 @@ export default function BusinessProfilePage() {
         const { data, error: fetchError } = await supabase
           .from('businesses')
           .select('*')
-          .eq('claimed_by', user.id)
+          .eq('claimed_by_phone', user.phone)
           .eq('is_active', true)
           .maybeSingle()
 
@@ -150,7 +150,7 @@ export default function BusinessProfilePage() {
           updated_at: new Date().toISOString()
         })
         .eq('id', business.id)
-        .eq('claimed_by', user.id)
+        .eq('claimed_by_phone', user.phone)
 
       if (updateError) {
         setError(updateError.message)

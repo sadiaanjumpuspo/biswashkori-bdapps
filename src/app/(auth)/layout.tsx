@@ -11,7 +11,7 @@ export default function AuthLayout({
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <Link href="/" className="inline-flex flex-col items-center group">
           <span className="font-brand font-bold text-3xl tracking-tight text-[var(--color-primary)] transition duration-200 group-hover:text-[var(--color-primary-light)]">
-            BishwasKori <span className="text-[var(--color-gold)] font-medium">.</span>
+            BiswashKori <span className="text-[var(--color-gold)] font-medium">.</span>
           </span>
           <span className="text-xs text-[var(--color-text-secondary)] font-medium mt-0.5 tracking-wider font-brand">
             বিশ্বাসযোগ্য রিভিউ, সঠিক সিদ্ধান্ত

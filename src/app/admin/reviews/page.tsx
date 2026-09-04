@@ -20,7 +20,7 @@ export default function ReviewModerationPage() {
     try {
       const { data, error: fetchError } = await supabase
         .from('reviews')
-        .select('*, businesses(name, name_bn), profiles(full_name)')
+        .select('*, businesses(name, name_bn)')
         .eq('status', 'pending')
         .order('created_at', { ascending: true })
 
@@ -42,7 +42,8 @@ export default function ReviewModerationPage() {
     fetchPendingReviews()
   }, [])
 
-  const handleApprove = async (reviewId: string) => {
+  const handleApprove = async (review: any) => {
+    const reviewId = review.id
     setActionLoading(prev => ({ ...prev, [reviewId]: true }))
     setError(null)
     setSuccess(null)
@@ -59,7 +60,28 @@ export default function ReviewModerationPage() {
       if (approveError) {
         setError(approveError.message)
       } else {
-        setSuccess('রিভিউটি সফলভাবে অনুমোদন করা হয়েছে!')
+        // Recalculate business trust score
+        if (review.business_id) {
+          const { data: allApproved } = await supabase
+            .from('reviews')
+            .select('rating')
+            .eq('business_id', review.business_id)
+            .eq('status', 'approved')
+
+          if (allApproved && allApproved.length > 0) {
+            const avg = allApproved.reduce((acc: number, r: any) => acc + (r.rating || 0), 0) / allApproved.length
+            await supabase
+              .from('businesses')
+              .update({
+                trust_score: parseFloat(avg.toFixed(1)),
+                total_reviews: allApproved.length,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', review.business_id)
+          }
+        }
+
+        setSuccess('রিভিউটি সফলভাবে অনুমোদন করা হয়েছে এবং ব্যবসার ট্রাস্ট স্কোর আপডেট করা হয়েছে!')
         await fetchPendingReviews()
       }
     } catch (err) {
@@ -165,7 +187,7 @@ export default function ReviewModerationPage() {
                 <div className="sm:text-right">
                   <span className="text-[10px] text-[var(--color-text-muted)] block">লিখেছেন:</span>
                   <span className="font-bold text-xs text-[var(--color-text-secondary)]">
-                    {rev.profiles?.full_name || 'বেনামী ব্যবহারকারী'}
+                    {rev.user_phone || 'Subscriber'}
                   </span>
                 </div>
               </div>
@@ -238,7 +260,7 @@ export default function ReviewModerationPage() {
                   <button
                     type="button"
                     disabled={actionLoading[rev.id]}
-                    onClick={() => handleApprove(rev.id)}
+                    onClick={() => handleApprove(rev)}
                     className="inline-flex items-center space-x-1 bg-[var(--color-primary)] hover:bg-[var(--color-primary-light)] text-white px-4 py-2 rounded-lg text-xs font-semibold shadow-xs transition duration-150 disabled:opacity-50 cursor-pointer"
                   >
                     <Check className="w-4 h-4" />

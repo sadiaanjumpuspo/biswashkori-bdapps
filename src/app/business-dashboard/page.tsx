@@ -23,7 +23,7 @@ export default function BusinessDashboardOverview() {
         const { data: bizData, error: bizError } = await supabase
           .from('businesses')
           .select('*, business_categories(name_en, name_bn)')
-          .eq('claimed_by', user.id)
+          .eq('claimed_by_phone', user.phone)
           .eq('is_active', true)
           .maybeSingle()
 

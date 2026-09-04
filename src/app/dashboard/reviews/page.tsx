@@ -21,7 +21,7 @@ export default function UserReviewsPage() {
         const { data, error } = await supabase
           .from('reviews')
           .select('*, businesses(name, name_bn, slug, logo_url)')
-          .eq('user_id', user.id)
+          .eq('user_phone', user.phone)
           .order('created_at', { ascending: false })
 
         if (error) {

@@ -52,7 +52,7 @@ export default function ReviewCard({ review, currentUserId }: ReviewCardProps) {
         .from('review_votes')
         .select('id')
         .eq('review_id', review.id)
-        .eq('user_id', currentUserId)
+        .eq('user_phone', currentUserId)
         .eq('vote', 'helpful')
         .single()
 
@@ -84,7 +84,7 @@ export default function ReviewCard({ review, currentUserId }: ReviewCardProps) {
         .from('review_votes')
         .insert({
           review_id: review.id,
-          user_id: currentUserId,
+          user_phone: currentUserId,
           vote: 'helpful'
         })
 
@@ -104,7 +104,7 @@ export default function ReviewCard({ review, currentUserId }: ReviewCardProps) {
         .from('review_votes')
         .delete()
         .eq('review_id', review.id)
-        .eq('user_id', currentUserId)
+        .eq('user_phone', currentUserId)
 
       if (!deleteError) {
         await supabase
@@ -142,7 +142,7 @@ export default function ReviewCard({ review, currentUserId }: ReviewCardProps) {
           <div>
             <div className="flex items-center space-x-1.5 flex-wrap">
               <span className="font-bold text-sm text-[var(--color-text-primary)] font-brand">
-                {review.profiles?.full_name || (isBn ? 'বেনামী ব্যবহারকারী' : 'Anonymous User')}
+                {review.profiles?.full_name || (review as any).user_phone || (isBn ? 'বেনামী ব্যবহারকারী' : 'Anonymous User')}
               </span>
               {review.is_verified_purchase && (
                 <span className="inline-flex items-center text-[10px] text-[var(--color-primary)] font-brand bg-[var(--color-primary-muted)] px-1.5 py-0.5 rounded-sm font-semibold border border-[var(--color-primary)]/10">

@@ -74,7 +74,7 @@ export default function EditProfilePage() {
           avatar_url: avatarUrl,
           updated_at: new Date().toISOString()
         })
-        .eq('id', user.id)
+        .eq('phone', user.phone)
 
       if (updateError) {
         setError(updateError.message)

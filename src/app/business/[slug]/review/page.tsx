@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
@@ -12,15 +11,7 @@ export default async function WriteReviewPage({ params }: PageProps) {
   const resolvedParams = await params
   const supabase = createClient()
 
-  // 1. Check if user is authenticated
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    // Redirect unauthenticated user to login with redirect back path
-    redirect(`/login?redirect=/business/${resolvedParams.slug}/review`)
-  }
-
-  // 2. Fetch business details
+  // Fetch business details
   const { data: business } = await supabase
     .from('businesses')
     .select('id, name, name_bn, slug')
@@ -51,7 +42,7 @@ export default async function WriteReviewPage({ params }: PageProps) {
           businessId={business.id}
           businessName={business.name_bn || business.name}
           businessSlug={business.slug}
-          userId={user.id}
+          userId=""
         />
       </main>
 

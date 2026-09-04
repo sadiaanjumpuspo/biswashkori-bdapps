@@ -16,7 +16,7 @@ export default function Footer() {
           <div className="space-y-4 md:col-span-2">
             <Link href="/" className="inline-flex flex-col">
               <span className="font-brand font-bold text-2xl tracking-tight text-[var(--color-primary)]">
-                BishwasKori<span className="text-[var(--color-gold)] font-medium">.</span>
+                BiswashKori<span className="text-[var(--color-gold)] font-medium">.</span>
               </span>
               <span className="text-xs text-[var(--color-text-secondary)] font-medium font-brand -mt-1 tracking-wider leading-none">
                 {isEn ? "Trusted Reviews, Right Decisions" : "বিশ্বাষযোগ্য রিভিউ, সঠিক সিদ্ধান্ত"}
@@ -24,8 +24,8 @@ export default function Footer() {
             </Link>
             <p className="text-sm text-[var(--color-text-secondary)] max-w-sm font-brand leading-relaxed">
               {isEn 
-                ? "BishwasKori is Bangladesh's premier independent business reviews platform. Our goal is to build trusted connections between consumers and local businesses." 
-                : "বিশ্বাস করি (BishwasKori) বাংলাদেশের প্রথম ও একমাত্র ডেডিকেটেড ব্যবসা প্রতিষ্ঠান মূল্যায়ন ও রিভিউ প্ল্যাটফর্ম। আমাদের লক্ষ্য ক্রেতা ও বিক্রেতার মাঝে আস্থার সম্পর্ক গড়ে তোলা।"
+                ? "BiswashKori is Bangladesh's premier independent business reviews platform. Our goal is to build trusted connections between consumers and local businesses." 
+                : "বিশ্বাস করি (BiswashKori) বাংলাদেশের প্রথম ও একমাত্র ডেডিকেটেড ব্যবসা প্রতিষ্ঠান মূল্যায়ন ও রিভিউ প্ল্যাটফর্ম। আমাদের লক্ষ্য ক্রেতা ও বিক্রেতার মাঝে আস্থার সম্পর্ক গড়ে তোলা।"
               }
             </p>
           </div>

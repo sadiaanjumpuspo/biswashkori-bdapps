@@ -21,9 +21,7 @@ export default async function BusinessProfilePage({ params }: PageProps) {
   const locale = await getLocale()
   const isBn = locale === 'bn'
 
-  // Fetch current user if logged in
-  const { data: { user } } = await supabase.auth.getUser()
-  const currentUserId = user?.id
+  const currentUserId = ""
 
   // 1. Fetch business details
   const { data: business } = await supabase
@@ -59,11 +57,6 @@ export default async function BusinessProfilePage({ params }: PageProps) {
     .from('reviews')
     .select(`
       *,
-      profiles (
-        full_name,
-        avatar_url,
-        is_verified
-      ),
       business_replies (*)
     `)
     .eq('business_id', business.id)

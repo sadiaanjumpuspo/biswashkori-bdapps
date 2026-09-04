@@ -25,7 +25,7 @@ export default function BusinessReviewsPage() {
       const { data: bizData, error: bizError } = await supabase
         .from('businesses')
         .select('*')
-        .eq('claimed_by', user.id)
+        .eq('claimed_by_phone', user.phone)
         .eq('is_active', true)
         .maybeSingle()
 
@@ -75,7 +75,7 @@ export default function BusinessReviewsPage() {
         .insert({
           review_id: reviewId,
           business_id: business.id,
-          replied_by: user!.id,
+          replied_by_phone: user!.phone,
           body: text
         })
 

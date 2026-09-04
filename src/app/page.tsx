@@ -6,6 +6,7 @@ import { TrustScore, StarRating, VerifiedBadge, PremiumBadge } from '@/component
 import { ShoppingBag, MapPin, Landmark, Briefcase, Search, ArrowRight, CheckCircle, Shield, Award } from 'lucide-react'
 import { getTranslations, getLocale } from 'next-intl/server'
 import SearchInputWithSuggestions from '@/components/shared/SearchInputWithSuggestions'
+import { SubscriptionCard } from '@/components/subscription-card'
 
 // Icon mapping helper
 const getCategoryIcon = (iconName: string) => {
@@ -97,6 +98,11 @@ export default async function HomePage() {
               <SearchInputWithSuggestions isHero={true} />
             </div>
           </div>
+        </section>
+
+        {/* --- BDAPPS SUBSCRIPTION CARD SECTION --- */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 relative z-10">
+          <SubscriptionCard />
         </section>
 
         {/* --- CATEGORIES SECTION --- */}
