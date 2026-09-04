@@ -1,47 +1,49 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { formatBdappsMobile } from './bdapps';
 import { createClient } from '@/lib/supabase/client';
 
 export interface BdappsUser {
   phone: string;
-  fullName?: string;
-  role?: 'user' | 'business_owner' | 'admin';
+  fullName: string;
+  role: 'user' | 'business_owner' | 'admin';
   subscriptionStatus: 'REGISTERED' | 'UNREGISTERED' | 'PENDING_CHARGE';
-  hasPassword?: boolean;
 }
 
 interface BdappsContextType {
   user: BdappsUser | null;
   isLoading: boolean;
   isModalOpen: boolean;
-  modalStep: 'phone' | 'confirm' | 'otp' | 'enter_password' | 'set_password' | 'success';
+  modalStep: 'phone' | 'confirm' | 'otp' | 'success';
   pendingMobile: string;
-  otpReferenceNo: string;
   error: string | null;
   openSubscribeModal: (initialMobile?: string) => void;
   closeSubscribeModal: () => void;
-  checkStatus: (mobile: string) => Promise<{ status: 'REGISTERED' | 'UNREGISTERED' | 'PENDING_CHARGE'; hasPassword: boolean; storedPin?: string; fullName?: string }>;
-  loginWithPassword: (password: string) => Promise<boolean>;
-  requestOtp: (mobile: string) => Promise<{ success: boolean; referenceNo?: string; alreadyRegistered?: boolean }>;
-  verifyOtp: (otp: string) => Promise<{ success: boolean; isFirstTime?: boolean }>;
-  saveInitialProfile: (pinCode: string, fullName: string, location: string) => Promise<boolean>;
+  checkStatus: (mobile: string) => Promise<{ status: 'REGISTERED' | 'UNREGISTERED' | 'PENDING_CHARGE' }>;
+  requestOtp: (mobile: string) => Promise<{ success: boolean; alreadyRegistered?: boolean; referenceNo?: string }>;
+  verifyOtp: (otp: string) => Promise<{ success: boolean }>;
   unsubscribe: () => Promise<boolean>;
   logout: () => void;
 }
 
 const BdappsContext = createContext<BdappsContextType | undefined>(undefined);
 
+export function formatBdappsMobile(mobile: string): string {
+  let cleaned = mobile.replace(/\D/g, '');
+  if (cleaned.startsWith('880')) return cleaned;
+  if (cleaned.startsWith('0')) return '88' + cleaned;
+  if (cleaned.length === 10) return '880' + cleaned;
+  return cleaned;
+}
+
 export function BdappsProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<BdappsUser | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [modalStep, setModalStep] = useState<'phone' | 'confirm' | 'otp' | 'enter_password' | 'set_password' | 'success'>('phone');
+  const [modalStep, setModalStep] = useState<'phone' | 'confirm' | 'otp' | 'success'>('phone');
   const [pendingMobile, setPendingMobile] = useState<string>('');
   const [otpReferenceNo, setOtpReferenceNo] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  const [cachedPin, setCachedPin] = useState<string | null>(null);
 
   const supabase = createClient();
 
@@ -80,35 +82,13 @@ export function BdappsProvider({ children }: { children: React.ReactNode }) {
     setError(null);
   };
 
-  // 1. Check Subscription Status & Password Existence
-  const checkStatus = async (mobile: string): Promise<{ status: 'REGISTERED' | 'UNREGISTERED' | 'PENDING_CHARGE'; hasPassword: boolean; storedPin?: string; fullName?: string }> => {
+  // 1. Check Subscription Status
+  const checkStatus = async (mobile: string): Promise<{ status: 'REGISTERED' | 'UNREGISTERED' | 'PENDING_CHARGE' }> => {
     setError(null);
     setIsLoading(true);
     try {
       const formatted = formatBdappsMobile(mobile);
       setPendingMobile(formatted);
-
-      // Check Supabase profiles for existing password/PIN
-      let hasPassword = false;
-      let storedPin: string | undefined;
-      let fullName: string | undefined;
-
-      try {
-        const { data: dbProf } = await supabase
-          .from('profiles')
-          .select('pin_code, full_name')
-          .eq('phone', formatted)
-          .single();
-
-        if (dbProf && dbProf.pin_code) {
-          hasPassword = true;
-          storedPin = dbProf.pin_code;
-          fullName = dbProf.full_name || undefined;
-          setCachedPin(dbProf.pin_code);
-        }
-      } catch (e) {
-        // Profile or pin_code not found
-      }
 
       // Check BDApps API
       const res = await fetch('/api/bdapps', {
@@ -128,70 +108,17 @@ export function BdappsProvider({ children }: { children: React.ReactNode }) {
         subStatus = 'PENDING_CHARGE';
       }
 
-      return { status: subStatus, hasPassword, storedPin, fullName };
+      return { status: subStatus };
     } catch (err: any) {
       setError(err.message || 'Failed to check subscription status.');
-      return { status: 'UNREGISTERED', hasPassword: false };
+      return { status: 'UNREGISTERED' };
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 2. Login with Password/PIN
-  const loginWithPassword = async (password: string): Promise<boolean> => {
-    setError(null);
-    setIsLoading(true);
-
-    try {
-      let valid = false;
-      let targetPhone = pendingMobile;
-      let userName = 'BDApps Subscriber';
-
-      if (cachedPin && cachedPin.trim() === password.trim()) {
-        valid = true;
-      } else {
-        const { data: dbProf } = await supabase
-          .from('profiles')
-          .select('pin_code, full_name, role')
-          .eq('phone', targetPhone)
-          .single();
-
-        if (dbProf && dbProf.pin_code?.trim() === password.trim()) {
-          valid = true;
-          userName = dbProf.full_name || userName;
-        }
-      }
-
-      if (valid) {
-        const roleAssigned = (targetPhone === '8801878932651' || targetPhone === '01878932651') ? 'admin' : 'user';
-        const newUser: BdappsUser = {
-          phone: targetPhone,
-          fullName: userName,
-          role: roleAssigned,
-          subscriptionStatus: 'REGISTERED',
-          hasPassword: true,
-        };
-
-        setUser(newUser);
-        localStorage.setItem('bishwas_bdapps_mobile', targetPhone);
-        localStorage.setItem('bishwas_bdapps_sub_status', 'REGISTERED');
-        localStorage.setItem('bishwas_bdapps_name', userName);
-        setModalStep('success');
-        return true;
-      } else {
-        setError('Incorrect PIN / Password entered. Please try again.');
-        return false;
-      }
-    } catch (err: any) {
-      setError('Password validation failed.');
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // 3. Request OTP via BDApps
-  const requestOtp = async (mobile: string): Promise<{ success: boolean; referenceNo?: string; alreadyRegistered?: boolean }> => {
+  // 2. Request OTP
+  const requestOtp = async (mobile: string): Promise<{ success: boolean; alreadyRegistered?: boolean; referenceNo?: string }> => {
     setError(null);
     setIsLoading(true);
     try {
@@ -206,34 +133,40 @@ export function BdappsProvider({ children }: { children: React.ReactNode }) {
 
       const data = await res.json();
 
-      const isAlreadyReg = data.statusCode === 'E1351' || 
-                           data.statusDetail?.toLowerCase().includes('already registered') ||
-                           data.message?.toLowerCase().includes('already registered');
-
-      if (isAlreadyReg) {
+      if (data.alreadyRegistered || data.statusCode === 'E1351') {
+        const newUser: BdappsUser = {
+          phone: formatted,
+          fullName: 'Robi / Airtel Subscriber',
+          role: (formatted === '8801878932651' || formatted === '01878932651') ? 'admin' : 'user',
+          subscriptionStatus: 'REGISTERED',
+        };
+        setUser(newUser);
+        localStorage.setItem('bishwas_bdapps_mobile', formatted);
+        localStorage.setItem('bishwas_bdapps_sub_status', 'REGISTERED');
         return { success: true, alreadyRegistered: true };
       }
 
-      if (data.referenceNo) {
-        setOtpReferenceNo(data.referenceNo);
+      if (data.referenceNo || data.statusCode === 'S1000') {
+        setOtpReferenceNo(data.referenceNo || '');
         setModalStep('otp');
         return { success: true, referenceNo: data.referenceNo };
-      } else {
-        setError(data.statusDetail || data.message || 'Failed to send OTP. Please check mobile number.');
-        return { success: false };
       }
+
+      setError(data.statusDetail || 'Failed to send OTP to mobile number.');
+      return { success: false };
     } catch (err: any) {
-      setError(err.message || 'Network error requesting OTP.');
+      setError(err.message || 'Error triggering BDApps OTP.');
       return { success: false };
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 4. Verify OTP & Check First Time Password Status
-  const verifyOtp = async (otp: string): Promise<{ success: boolean; isFirstTime?: boolean }> => {
+  // 3. Verify OTP
+  const verifyOtp = async (otp: string): Promise<{ success: boolean }> => {
     setError(null);
     setIsLoading(true);
+
     try {
       const res = await fetch('/api/bdapps', {
         method: 'POST',
@@ -245,41 +178,32 @@ export function BdappsProvider({ children }: { children: React.ReactNode }) {
 
       if (data.statusCode === 'S1000' || data.subscriptionStatus === 'REGISTERED' || data.subscriberId) {
         const phone = pendingMobile || formatBdappsMobile(data.subscriberId || '');
-        
-        let isFirstTime = false;
-        try {
-          const { data: dbProfile } = await supabase
-            .from('profiles')
-            .select('pin_code, full_name')
-            .eq('phone', phone)
-            .single();
-
-          if (!dbProfile || !dbProfile.pin_code) {
-            isFirstTime = true;
-          }
-        } catch (e) {
-          isFirstTime = true;
-        }
+        const roleAssigned = (phone === '8801878932651' || phone === '01878932651') ? 'admin' : 'user';
 
         const newUser: BdappsUser = {
           phone,
           fullName: 'Verified BDApps User',
-          role: (phone === '8801878932651' || phone === '01878932651') ? 'admin' : 'user',
+          role: roleAssigned,
           subscriptionStatus: 'REGISTERED',
-          hasPassword: !isFirstTime,
         };
+
+        // Create profile in Supabase if not exists (safely using valid columns only)
+        await supabase
+          .from('profiles')
+          .upsert({
+            phone: phone,
+            full_name: 'BDApps Subscriber',
+            role: roleAssigned,
+            subscription_status: 'REGISTERED',
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'phone' });
 
         setUser(newUser);
         localStorage.setItem('bishwas_bdapps_mobile', phone);
         localStorage.setItem('bishwas_bdapps_sub_status', 'REGISTERED');
+        setModalStep('success');
 
-        if (isFirstTime) {
-          setModalStep('set_password');
-        } else {
-          setModalStep('success');
-        }
-
-        return { success: true, isFirstTime };
+        return { success: true };
       } else {
         setError(data.statusDetail || 'Invalid OTP code entered. Please try again.');
         return { success: false };
@@ -292,44 +216,7 @@ export function BdappsProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 5. Save Initial Password & Profile Info
-  const saveInitialProfile = async (pinCode: string, fullName: string, location: string): Promise<boolean> => {
-    if (!pendingMobile && !user?.phone) return false;
-    const phone = pendingMobile || user!.phone;
-    setError(null);
-    setIsLoading(true);
-
-    try {
-      const { error: upsertErr } = await supabase
-        .from('profiles')
-        .upsert({
-          phone: phone,
-          pin_code: pinCode.trim(),
-          full_name: fullName.trim() || 'BDApps Subscriber',
-          display_name: fullName.split(' ')[0] || 'User',
-          location: location.trim() || 'Dhaka, Bangladesh',
-          subscription_status: 'REGISTERED',
-          role: (phone === '8801878932651' || phone === '01878932651') ? 'admin' : 'user',
-          updated_at: new Date().toISOString()
-        });
-
-      if (upsertErr) {
-        console.error('Error saving profile:', upsertErr);
-      }
-
-      localStorage.setItem('bishwas_bdapps_name', fullName.trim());
-      setUser(prev => prev ? { ...prev, fullName: fullName.trim(), hasPassword: true } : null);
-      setModalStep('success');
-      return true;
-    } catch (err: any) {
-      setError(err.message || 'Failed to save profile settings.');
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // 6. Unsubscribe
+  // 4. Unsubscribe
   const unsubscribe = async (): Promise<boolean> => {
     if (!user?.phone) return false;
     setError(null);
@@ -341,20 +228,23 @@ export function BdappsProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ action: 'unsubscribe', mobile: user.phone }),
       });
 
-      logout();
+      setUser(null);
+      localStorage.removeItem('bishwas_bdapps_mobile');
+      localStorage.removeItem('bishwas_bdapps_sub_status');
+      localStorage.removeItem('bishwas_bdapps_name');
+      localStorage.removeItem('bishwas_bdapps_role');
       return true;
     } catch (err: any) {
-      setError(err.message || 'Error unsubscribing service.');
+      setError(err.message || 'Failed to cancel subscription.');
       return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 7. Logout / Clear Session
+  // 5. Logout
   const logout = () => {
     setUser(null);
-    setCachedPin(null);
     localStorage.removeItem('bishwas_bdapps_mobile');
     localStorage.removeItem('bishwas_bdapps_sub_status');
     localStorage.removeItem('bishwas_bdapps_name');
@@ -369,15 +259,12 @@ export function BdappsProvider({ children }: { children: React.ReactNode }) {
         isModalOpen,
         modalStep,
         pendingMobile,
-        otpReferenceNo,
         error,
         openSubscribeModal,
         closeSubscribeModal,
         checkStatus,
-        loginWithPassword,
         requestOtp,
         verifyOtp,
-        saveInitialProfile,
         unsubscribe,
         logout,
       }}
