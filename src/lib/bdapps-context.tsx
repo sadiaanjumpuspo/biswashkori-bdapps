@@ -3,6 +3,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
+/**
+ * BdappsUser Interface
+ * Represents an authenticated subscriber session connected via BDApps gateway.
+ */
 export interface BdappsUser {
   phone: string;
   fullName: string;
@@ -10,6 +14,10 @@ export interface BdappsUser {
   subscriptionStatus: 'REGISTERED' | 'UNREGISTERED' | 'PENDING_CHARGE';
 }
 
+/**
+ * Context Type Definition
+ * Exposes core auth functions, subscription management, and modal states.
+ */
 interface BdappsContextType {
   user: BdappsUser | null;
   isLoading: boolean;
@@ -28,6 +36,10 @@ interface BdappsContextType {
 
 const BdappsContext = createContext<BdappsContextType | undefined>(undefined);
 
+/**
+ * Mobile Number Sanitizer & Formatter
+ * Standardizes raw Bangladeshi MSISDN input into international format (e.g., 88018XXXXXXXX).
+ */
 export function formatBdappsMobile(mobile: string): string {
   let cleaned = mobile.replace(/\D/g, '');
   if (cleaned.startsWith('880')) return cleaned;
@@ -36,6 +48,10 @@ export function formatBdappsMobile(mobile: string): string {
   return cleaned;
 }
 
+/**
+ * BDApps Global Provider
+ * Manages carrier billing sessions, OTP verification flow, and local storage state.
+ */
 export function BdappsProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<BdappsUser | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -47,7 +63,7 @@ export function BdappsProvider({ children }: { children: React.ReactNode }) {
 
   const supabase = createClient();
 
-  // Restore session from localStorage on load
+  // Restore subscriber session from local storage on initial mount
   useEffect(() => {
     try {
       const storedMobile = localStorage.getItem('bishwas_bdapps_mobile');
@@ -82,7 +98,10 @@ export function BdappsProvider({ children }: { children: React.ReactNode }) {
     setError(null);
   };
 
-  // 1. Check Subscription Status
+  /**
+   * Check Subscription Status
+   * Queries internal API proxy to verify if the subscriber MSISDN is active.
+   */
   const checkStatus = async (mobile: string): Promise<{ status: 'REGISTERED' | 'UNREGISTERED' | 'PENDING_CHARGE' }> => {
     setError(null);
     setIsLoading(true);
@@ -90,7 +109,6 @@ export function BdappsProvider({ children }: { children: React.ReactNode }) {
       const formatted = formatBdappsMobile(mobile);
       setPendingMobile(formatted);
 
-      // Check BDApps API
       const res = await fetch('/api/bdapps', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -117,7 +135,10 @@ export function BdappsProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 2. Request OTP
+  /**
+   * Request OTP Code
+   * Triggers BDApps Gateway SMS OTP dispatch to subscriber mobile.
+   */
   const requestOtp = async (mobile: string): Promise<{ success: boolean; alreadyRegistered?: boolean; referenceNo?: string }> => {
     setError(null);
     setIsLoading(true);
@@ -162,7 +183,10 @@ export function BdappsProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 3. Verify OTP
+  /**
+   * Verify OTP Code
+   * Validates subscriber input against BDApps gateway reference payload.
+   */
   const verifyOtp = async (otp: string): Promise<{ success: boolean }> => {
     setError(null);
     setIsLoading(true);
@@ -187,7 +211,7 @@ export function BdappsProvider({ children }: { children: React.ReactNode }) {
           subscriptionStatus: 'REGISTERED',
         };
 
-        // Create profile in Supabase if not exists (safely using valid columns only)
+        // Persist profile record in Supabase securely
         await supabase
           .from('profiles')
           .upsert({
@@ -216,7 +240,10 @@ export function BdappsProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 4. Unsubscribe
+  /**
+   * Unsubscribe Service
+   * Cancels active carrier subscription via API proxy.
+   */
   const unsubscribe = async (): Promise<boolean> => {
     if (!user?.phone) return false;
     setError(null);
@@ -242,7 +269,10 @@ export function BdappsProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // 5. Logout
+  /**
+   * Logout Session
+   * Clears local user state and stored auth keys.
+   */
   const logout = () => {
     setUser(null);
     localStorage.removeItem('bishwas_bdapps_mobile');
