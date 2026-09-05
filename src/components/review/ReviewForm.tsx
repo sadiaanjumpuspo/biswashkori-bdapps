@@ -7,6 +7,9 @@ import { StarRating } from '@/components/trust/TrustComponents'
 import { AlertCircle, CheckCircle, ArrowLeft, ShieldCheck, Sparkles, RefreshCw } from 'lucide-react'
 import { useBdapps } from '@/lib/bdapps-context'
 
+/**
+ * ReviewForm Props Interface
+ */
 interface ReviewFormProps {
   businessId: string
   businessName: string
@@ -14,6 +17,10 @@ interface ReviewFormProps {
   userId?: string
 }
 
+/**
+ * ReviewForm Component
+ * Renders verified customer review submission form with BDApps subscription guards.
+ */
 export default function ReviewForm({ businessId, businessName, businessSlug }: ReviewFormProps) {
   const { user, openSubscribeModal, checkStatus, isLoading } = useBdapps()
   const [rating, setRating] = useState(0)
@@ -27,7 +34,7 @@ export default function ReviewForm({ businessId, businessName, businessSlug }: R
   const router = useRouter()
   const supabase = createClient()
 
-  // Guard 1: Unregistered Subscriber
+  // Guard 1: Unregistered Subscriber (Must subscribe via BDApps carrier billing first)
   if (!user || user.subscriptionStatus === 'UNREGISTERED') {
     return (
       <div className="max-w-xl mx-auto bg-slate-900 text-white border border-emerald-500/30 rounded-3xl p-8 shadow-2xl text-center space-y-5">
@@ -54,7 +61,7 @@ export default function ReviewForm({ businessId, businessName, businessSlug }: R
 
         <button
           onClick={() => openSubscribeModal()}
-          className="w-full py-3.5 px-6 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-2xl text-sm shadow-xl transition transform active:scale-95 flex items-center justify-center gap-2"
+          className="w-full py-3.5 px-6 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-2xl text-sm shadow-xl transition transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
         >
           <span>Subscribe via BDApps (2.78 BDT/day)</span>
         </button>
@@ -62,7 +69,7 @@ export default function ReviewForm({ businessId, businessName, businessSlug }: R
     )
   }
 
-  // Guard 2: Pending Payment Status (Registered profile, but payment pending)
+  // Guard 2: Pending Payment Status (Registered profile, but daily carrier charge pending)
   if (user.subscriptionStatus === 'PENDING_CHARGE') {
     return (
       <div className="max-w-xl mx-auto bg-amber-950/90 text-amber-100 border border-amber-500/40 rounded-3xl p-8 shadow-2xl text-center space-y-5 font-brand">
@@ -85,7 +92,7 @@ export default function ReviewForm({ businessId, businessName, businessSlug }: R
         <button
           onClick={() => checkStatus(user.phone)}
           disabled={isLoading}
-          className="w-full py-3.5 px-6 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-2xl text-sm shadow-xl transition flex items-center justify-center gap-2"
+          className="w-full py-3.5 px-6 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-2xl text-sm shadow-xl transition flex items-center justify-center gap-2 cursor-pointer"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           <span>Re-check Carrier Payment Status</span>
@@ -94,6 +101,10 @@ export default function ReviewForm({ businessId, businessName, businessSlug }: R
     )
   }
 
+  /**
+   * Handle Review Form Submission
+   * Inserts new review record into Supabase with 'pending' status for moderation.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -118,6 +129,7 @@ export default function ReviewForm({ businessId, businessName, businessSlug }: R
         subscription_status: 'REGISTERED',
       })
 
+      // Insert review record into moderation queue ('pending' status)
       const { error: insertError } = await supabase
         .from('reviews')
         .insert({
@@ -155,104 +167,139 @@ export default function ReviewForm({ businessId, businessName, businessSlug }: R
           <CheckCircle className="w-6 h-6" />
         </div>
         <h2 className="text-xl font-bold text-[var(--color-text-primary)]">
-          ধন্যবাদ! আপনার রিভিউটি প্রকাশিত হয়েছে।
+          ধন্যবাদ! আপনার রিভিউটি জমা দেওয়া হয়েছে।
         </h2>
         <p className="text-sm text-[var(--color-text-secondary)]">
-          আপনার মূল্যবান মতামত কোম্পানিটির ট্রাস্ট স্কোর বৃদ্ধিতে সহায়তা করবে।
+          অ্যাডমিন কর্তৃক যাচাই ও অনুমোদনের পর রিভিউটি প্রোফাইলে প্রকাশ পাবে।
         </p>
       </div>
     )
   }
 
   return (
-    <div className="max-w-2xl mx-auto font-brand">
+    <div className="max-w-2xl mx-auto bg-[var(--color-surface)] border border-[var(--color-border)] p-6 sm:p-8 rounded-3xl shadow-sm font-brand">
       <button
         onClick={() => router.back()}
-        className="flex items-center space-x-1.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] mb-6 transition"
+        className="inline-flex items-center text-xs font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] mb-6 transition"
       >
-        <ArrowLeft className="w-4 h-4" />
-        <span>ফিরে যান</span>
+        <ArrowLeft className="w-4 h-4 mr-1" />
+        <span>পেছনে ফিরে যান</span>
       </button>
 
-      <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-2xl p-6 sm:p-8 space-y-6 shadow-xs">
+      <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mb-1">
+        {businessName}-এর জন্য রিভিউ লিখুন
+      </h1>
+      <p className="text-xs text-[var(--color-text-secondary)] mb-6">
+        আপনার বাস্তব কেনাকাটা বা সেবা গ্রহণের অভিজ্ঞতা শেয়ার করুন।
+      </p>
+
+      {error && (
+        <div className="mb-6 p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-2xl flex items-center gap-3 text-xs text-rose-600 dark:text-rose-400">
+          <AlertCircle className="w-5 h-5 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Star Rating Selector */}
         <div>
-          <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">
-            BDApps Verified Subscriber ({user.phone})
-          </span>
-          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">
-            {businessName}-এর জন্য আপনার সতস্ফূর্ত মতামত শেয়ার করুন
-          </h1>
+          <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-secondary)] mb-2">
+            আপনার স্টার রেটিং *
+          </label>
+          <div className="flex items-center gap-2">
+            <StarRating rating={rating} interactive onChange={(r) => setRating(r)} />
+            <span className="text-sm font-bold text-amber-500 ml-2">
+              {rating > 0 ? `${rating} / 5` : 'রেটিং নির্বাচন করুন'}
+            </span>
+          </div>
         </div>
 
-        {error && (
-          <div className="p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl text-xs text-rose-600 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
+        {/* Review Title */}
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-secondary)] mb-2">
+            রিভিউয়ের শিরোনাম *
+          </label>
+          <input
+            type="text"
+            placeholder="যেমন: চমৎকার সেবা ও দ্রুত ডেলিভারি"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            className="w-full px-4 py-3 bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-2xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none transition font-medium"
+          />
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Star Rating Select */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-[var(--color-text-primary)]">
-              রেটিং দিন (১ থেকে ৫ স্টার) *
+        {/* Language Selection */}
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-secondary)] mb-2">
+            রিভিউয়ের ভাষা
+          </label>
+          <div className="flex gap-4">
+            <label className="flex items-center space-x-2 text-xs cursor-pointer font-medium">
+              <input
+                type="radio"
+                name="language"
+                checked={language === 'bn'}
+                onChange={() => setLanguage('bn')}
+                className="text-emerald-600 focus:ring-emerald-500"
+              />
+              <span>বাংলা</span>
             </label>
-            <div className="flex items-center gap-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  type="button"
-                  key={star}
-                  onClick={() => setRating(star)}
-                  className={`p-2 rounded-xl border transition ${
-                    rating >= star
-                      ? 'bg-amber-500/10 border-amber-500 text-amber-500'
-                      : 'border-[var(--color-border)] text-slate-400'
-                  }`}
-                >
-                  ★ {star}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Title */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-[var(--color-text-primary)]">
-              সংক্ষিপ্ত শিরোনাম
+            <label className="flex items-center space-x-2 text-xs cursor-pointer font-medium">
+              <input
+                type="radio"
+                name="language"
+                checked={language === 'en'}
+                onChange={() => setLanguage('en')}
+                className="text-emerald-600 focus:ring-emerald-500"
+              />
+              <span>English</span>
             </label>
-            <input
-              type="text"
-              placeholder="উদাহরণ: দারুণ সার্ভিস ও দ্রুত ডেলিভারি!"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-2.5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
           </div>
+        </div>
 
-          {/* Body */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-[var(--color-text-primary)]">
-              বিস্তারিত অভিজ্ঞতা *
-            </label>
-            <textarea
-              rows={4}
-              placeholder="কোম্পানিটির ভালো এবং মন্দ দিকগুলো বিস্তারিত লিখুন..."
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              required
-              className="w-full px-4 py-2.5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
+        {/* Review Body */}
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-secondary)] mb-2">
+            বিস্তারিত অভিজ্ঞতা *
+          </label>
+          <textarea
+            rows={5}
+            placeholder="পণ্য বা সেবার মান, ডেলিভারির সময়সূচী ও কাস্টমার সাপোর্টের অভিজ্ঞতা বিস্তারিত লিখুন..."
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            required
+            className="w-full px-4 py-3 bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-2xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none transition font-medium"
+          />
+        </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition shadow-md flex items-center justify-center gap-2"
-          >
-            {loading ? 'সাবমিট করা হচ্ছে...' : 'রিভিউ সাবমিট করুন'}
-          </button>
-        </form>
-      </div>
+        {/* Verified Purchase Checkbox */}
+        <div className="flex items-center space-x-3 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
+          <input
+            type="checkbox"
+            id="verified"
+            checked={isVerifiedPurchase}
+            onChange={(e) => setIsVerifiedPurchase(e.target.checked)}
+            className="w-4 h-4 text-emerald-600 focus:ring-emerald-500 rounded cursor-pointer"
+          />
+          <label htmlFor="verified" className="text-xs font-semibold text-[var(--color-text-primary)] cursor-pointer">
+            আমি এই প্রতিষ্ঠান থেকে প্রামাণিক কেনাকাটা বা সেবাগ্রহণ করেছি (Verified Purchase)
+          </label>
+        </div>
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm rounded-2xl shadow-xl transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+        >
+          {loading ? (
+            <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+          ) : (
+            <span>রিভিউ সাবমিট করুন</span>
+          )}
+        </button>
+      </form>
     </div>
   )
 }
