@@ -5,7 +5,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-16.2-black?logo=next.js)](https://nextjs.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38BDF8?logo=tailwind-css)](https://tailwindcss.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?logo=supabase)](https://supabase.com/)
-[![BDApps](https://img.shields.io/badge/BDApps-APP__140029-red)](https://bdapps.com/)
+[![BDApps](https://img.shields.io/badge/BDApps-Carrier_Billing-red)](https://bdapps.com/)
 
 ---
 
@@ -20,7 +20,7 @@ Integrated seamlessly with **BDApps Gateway**, subscribers on **Robi** and **Cir
 ## ✨ Key Features
 
 - 🌟 **Automated Trust Score**: Calculates dynamic business ratings based on review volume, weighted averages, and recency.
-- 📱 **BDApps OTP Authentication**: Fast carrier billing authentication for Robi and Cirkle subscribers via `APP_140029`.
+- 📱 **BDApps OTP Authentication**: Fast carrier billing authentication for Robi and Cirkle subscribers.
 - 🏢 **Business Registration & Claiming**: Allows business owners to submit new listings (`/businesses/new`), claim existing profiles, and upload official verification documents.
 - 🛡️ **Review Moderation Queue**: Admin dashboard (`/admin/reviews`) to review, approve, or reject customer feedback and recalculate trust scores automatically.
 - 🌐 **Bilingual Support**: Fully translated in Bangla (**Anek Bangla** font) and English with instant language toggling.
@@ -33,7 +33,7 @@ Integrated seamlessly with **BDApps Gateway**, subscribers on **Robi** and **Cir
 - **Framework**: Next.js 16 (App Router, Turbopack)
 - **Styling**: Tailwind CSS v4, Lucide Icons, Framer Motion
 - **Database & Auth**: Supabase PostgreSQL, Row Level Security (RLS)
-- **Carrier Billing**: BDApps PHP Gateway API Proxy (`https://bdappsdigitalapps.com/BishwasKori`)
+- **Carrier Billing**: BDApps PHP Gateway API Proxy
 - **Typography**: Anek Bangla, Hind Siliguri, DM Sans
 
 ---
@@ -51,13 +51,13 @@ Create a `.env.local` file in the root directory:
 
 ```env
 # Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=https://your-supabase-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+NEXT_PUBLIC_SUPABASE_URL=YOUR_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
 
 # BDApps Gateway API
-NEXT_PUBLIC_BDAPPS_BASE_URL=https://bdappsdigitalapps.com/BishwasKori
-NEXT_PUBLIC_BDAPPS_APP_ID=APP_140029
-NEXT_PUBLIC_BDAPPS_APP_PASSWORD=your-bdapps-password
+NEXT_PUBLIC_BDAPPS_BASE_URL=YOUR_BDAPPS_BASE_URL
+NEXT_PUBLIC_BDAPPS_APP_ID=YOUR_BDAPPS_APP_ID
+NEXT_PUBLIC_BDAPPS_APP_PASSWORD=YOUR_BDAPPS_APP_PASSWORD
 ```
 
 ### 3. Install Dependencies
@@ -98,13 +98,12 @@ bishwaskori/
 
 ---
 
-## 🔐 Admin Credentials
+## 🔐 Moderation & Admin Portal
 
-- **Authorized Admin Phone**: `01878932651` / `8801878932651`
-- **Admin Portal**: Access [`/admin`](http://localhost:3000/admin) to manage reviews, flags, business claims, and verification badges.
+- **Admin Portal**: Authorized super-admins can access [`/admin`](http://localhost:3000/admin) to manage reviews, flags, business claims, and verification badges.
 
 ---
 
 ## 📜 License
 
-Developed for **BDApps Challenge / Sadia Puspo** (`sadiapuspo`). All rights reserved.
+Developed for **BDApps Challenge**. All rights reserved.
