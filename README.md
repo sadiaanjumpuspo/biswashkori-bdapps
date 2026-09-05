@@ -1,4 +1,4 @@
-# 🛡️ BiswashKori (বিশ্বাষকরি) — BDApps Trust & Review Platform
+# 🛡️ BiswashKori (বিশ্বাসকরি) — BDApps Trust & Review Platform
 
 > **Trusted Reviews, Right Decisions** — Bangladesh's premier independent business reviews platform integrated with BDApps carrier billing for Robi and Cirkle subscribers.
 
@@ -103,7 +103,3 @@ bishwaskori/
 - **Admin Portal**: Authorized super-admins can access [`/admin`](http://localhost:3000/admin) to manage reviews, flags, business claims, and verification badges.
 
 ---
-
-## 📜 License
-
-Developed for **BDApps Challenge**. All rights reserved.
